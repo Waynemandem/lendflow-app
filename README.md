@@ -52,7 +52,7 @@ src/
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/your-username/finance-admin-dashboard.git
+git clone https://github.com/waynemandem/finance-admin-dashboard.git
 ```
 
 2. Navigate into the project:
