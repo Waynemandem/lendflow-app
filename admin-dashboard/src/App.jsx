@@ -1,660 +1,700 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
-// ─── MOCK DATA ────────────────────────────────────────────────────────────────
-const mockCustomers = [
-  { id: 1, name: "Marcus J. Webb",  email: "m.webb@email.com",       phone: "+1 555 201 4891", joined: "12 Jan 2024", avatar: "MW", type: "old" },
-  { id: 2, name: "Priya Anand",     email: "priya.anand@email.com",  phone: "+1 555 308 7723", joined: "03 Feb 2024", avatar: "PA", type: "new" },
-  { id: 3, name: "David Okafor",    email: "d.okafor@email.com",     phone: "+1 555 419 5541", joined: "18 Mar 2024", avatar: "DO", type: "old" },
-  { id: 4, name: "Sofia Reyes",     email: "sofia.r@email.com",      phone: "+1 555 527 8834", joined: "01 Apr 2024", avatar: "SR", type: "new" },
-  { id: 5, name: "Ethan Blackwell", email: "e.blackwell@email.com",  phone: "+1 555 634 2210", joined: "22 Apr 2024", avatar: "EB", type: "old" },
-  { id: 6, name: "Nadia Fontaine",  email: "n.fontaine@email.com",   phone: "+1 555 741 9963", joined: "15 May 2024", avatar: "NF", type: "new" },
-];
-
-const mockLoans = [
-  { id: "LN-0041", customerId: 1, customer: "Marcus J. Webb",  amount: 12500, repaid: 8750,  issued: "14 Jan 2024", due: "14 Jan 2025", status: "pending", purpose: "Business Expansion", overdueDays: 12, callCount: 4,  caseStatus: "prioritized" },
-  { id: "LN-0042", customerId: 2, customer: "Priya Anand",     amount:  5000, repaid: 5000,  issued: "05 Feb 2024", due: "05 Aug 2024", status: "paid",    purpose: "Equipment Purchase", overdueDays: 0,  callCount: 1,  caseStatus: "processed"   },
-  { id: "LN-0043", customerId: 3, customer: "David Okafor",    amount: 20000, repaid: 4000,  issued: "20 Mar 2024", due: "20 Mar 2025", status: "default", purpose: "Real Estate",         overdueDays: 45, callCount: 28, caseStatus: "unfinished"  },
-  { id: "LN-0044", customerId: 4, customer: "Sofia Reyes",     amount:  7500, repaid: 7500,  issued: "02 Apr 2024", due: "02 Oct 2024", status: "paid",    purpose: "Personal",             overdueDays: 0,  callCount: 2,  caseStatus: "processed"   },
-  { id: "LN-0045", customerId: 5, customer: "Ethan Blackwell", amount: 15000, repaid: 9000,  issued: "24 Apr 2024", due: "24 Apr 2025", status: "pending", purpose: "Inventory",            overdueDays: 8,  callCount: 5,  caseStatus: "ptp"         },
-  { id: "LN-0046", customerId: 6, customer: "Nadia Fontaine",  amount:  3000, repaid: 1000,  issued: "17 May 2024", due: "17 Nov 2024", status: "default", purpose: "Education",            overdueDays: 33, callCount: 11, caseStatus: "unfinished"  },
-  { id: "LN-0047", customerId: 1, customer: "Marcus J. Webb",  amount:  8000, repaid: 8000,  issued: "01 Jun 2024", due: "01 Dec 2024", status: "paid",    purpose: "Vehicle",              overdueDays: 0,  callCount: 3,  caseStatus: "processed"   },
-  { id: "LN-0048", customerId: 3, customer: "David Okafor",    amount: 11000, repaid: 2200,  issued: "18 Jun 2024", due: "18 Jun 2025", status: "pending", purpose: "Renovation",           overdueDays: 5,  callCount: 7,  caseStatus: "pending"     },
-];
-
-// ─── THEME TOKENS ─────────────────────────────────────────────────────────────
+// ─── THEME ────────────────────────────────────────────────────────────────────
 const themes = {
   light: {
-    bg: "#f7f6f3", surface: "#ffffff", surfaceAlt: "#f0efe9",
-    border: "#e5e3dc",
-    text: "#1a1916", textSub: "#6b6860", textMuted: "#a09e96",
-    accent: "#1a1916", accentText: "#f7f6f3",
-    paid: "#2d7a4f", paidBg: "#edf7f1",
-    pending: "#a06120", pendingBg: "#fdf4e7",
-    def: "#b13030", defBg: "#fdf0f0",
-    overdue: "#b13030",
+    bg: "#f5f4f0", surface: "#ffffff", surfaceAlt: "#f0efe9",
+    border: "#e8e6df", borderStrong: "#d0cdc4",
+    text: "#1a1916", textSub: "#6b6860", textMuted: "#a8a69e",
+    accent: "#1a1916", accentText: "#ffffff",
+    blue: "#2563eb", blueLight: "#eff6ff",
+    red: "#dc2626", redLight: "#fef2f2",
+    green: "#16a34a", greenLight: "#f0fdf4",
+    orange: "#ea580c", orangeLight: "#fff7ed",
+    purple: "#7c3aed", purpleLight: "#f5f3ff",
   },
   dark: {
-    bg: "#111110", surface: "#1c1c1a", surfaceAlt: "#242422",
-    border: "#2e2e2b",
-    text: "#e8e6e1", textSub: "#8a8880", textMuted: "#5a5a56",
-    accent: "#e8e6e1", accentText: "#111110",
-    paid: "#4caf7d", paidBg: "rgba(76,175,125,0.1)",
-    pending: "#d4924a", pendingBg: "rgba(212,146,74,0.1)",
-    def: "#d46060", defBg: "rgba(212,96,96,0.1)",
-    overdue: "#d46060",
+    bg: "#0f0f0e", surface: "#1a1a18", surfaceAlt: "#222220",
+    border: "#2e2e2b", borderStrong: "#3e3e3a",
+    text: "#e8e6e1", textSub: "#8a8880", textMuted: "#555450",
+    accent: "#e8e6e1", accentText: "#0f0f0e",
+    blue: "#3b82f6", blueLight: "rgba(59,130,246,0.1)",
+    red: "#ef4444", redLight: "rgba(239,68,68,0.1)",
+    green: "#22c55e", greenLight: "rgba(34,197,94,0.1)",
+    orange: "#f97316", orangeLight: "rgba(249,115,22,0.1)",
+    purple: "#a78bfa", purpleLight: "rgba(167,139,250,0.1)",
   },
 };
 
+// ─── MOCK DATA ─────────────────────────────────────────────────────────────────
+const PRODUCTS = ["glowcredit", "loanglide", "quickfund", "swiftcash"];
+const mockCases = [
+  {
+    id: 1, product: "glowcredit", borrowerType: "Old", caseStatus: "unfinished",
+    callCount: 4, overdueDays: 12, overdueAmount: 725.35,
+    customer: {
+      name: "Ahmed Zakaria", gender: "M", age: 36, maritalStatus: "M",
+      phone1: "+233 24 456 7890", phone1Network: "Lending.MTN",
+      phone2: "+233 20 123 4567", phone2Network: "Vodafone",
+      address: "14 Accra New Town, Greater Accra",
+      emergencyContacts: [
+        { label: "Brothers or sisters", name: "Fatawu Zakaria", phone: "+233 24 987 6543" },
+        { label: "Father or mother",    name: "Amina Zakaria",  phone: "+233 27 555 1234" },
+      ],
+    },
+    loan: {
+      loanId: "9565384679456116824", product: "glowcredit", termType: "7D3T",
+      loanAmount: 1700, loanDate: "2026-03-24", loanTerms: 3,
+      overdueDays: 12, overdueAmount: 725.35, amountAfterExemption: 725.35,
+      paidAmount: 1400.66, recTotalAmount: 715.36,
+      dueDate: "2026-04-14", currency: "GHS",
+    },
+    actions: [
+      { no: 1, time: "2026-04-13 09:18:56", contactName: "Ahmed Zakaria", contactType: "SF", collector: "ENIOLA BALOGUN", contactPhone: "Phone 2", actionCode: "Customer Self", subCode: "PTP", description: "Ptp around 5pm" },
+      { no: 2, time: "2026-04-12 14:32:10", contactName: "Fatawu Zakaria", contactType: "EC", collector: "ENIOLA BALOGUN", contactPhone: "Phone 1", actionCode: "Contact",       subCode: "Promise to Pass On", description: "Brother said will remind him" },
+    ],
+    deductions: [
+      { date: "2026-03-28", amount: 800.00, txId: "TXN884729201", channel: "Mobile Money" },
+      { date: "2026-03-15", amount: 600.66, txId: "TXN772819300", channel: "Bank Transfer" },
+    ],
+  },
+  {
+    id: 2, product: "loanglide", borrowerType: "Old", caseStatus: "ptp",
+    callCount: 7, overdueDays: 3, overdueAmount: 480.53,
+    customer: {
+      name: "Mourh Ruth", gender: "F", age: 29, maritalStatus: "S",
+      phone1: "+233 55 234 5678", phone1Network: "MTN",
+      phone2: "+233 24 876 5432", phone2Network: "AirtelTigo",
+      address: "7 Kumasi Central, Ashanti Region",
+      emergencyContacts: [
+        { label: "Spouse", name: "Daniel Ruth", phone: "+233 20 444 9988" },
+      ],
+    },
+    loan: {
+      loanId: "7712938475610023847", product: "loanglide", termType: "14D2T",
+      loanAmount: 1200, loanDate: "2026-03-20", loanTerms: 2,
+      overdueDays: 3, overdueAmount: 480.53, amountAfterExemption: 480.53,
+      paidAmount: 719.47, recTotalAmount: 480.53,
+      dueDate: "2026-04-10", currency: "GHS",
+    },
+    actions: [
+      { no: 1, time: "2026-04-13 11:02:44", contactName: "Mourh Ruth", contactType: "SF", collector: "ENIOLA BALOGUN", contactPhone: "Phone 1", actionCode: "Customer Self", subCode: "PTP", description: "Will pay by end of day" },
+    ],
+    deductions: [
+      { date: "2026-04-01", amount: 719.47, txId: "TXN991827364", channel: "Mobile Money" },
+    ],
+  },
+  {
+    id: 3, product: "glowcredit", borrowerType: "Old", caseStatus: "unfinished",
+    callCount: 0, overdueDays: 1, overdueAmount: 369.15,
+    customer: {
+      name: "Alice Whajah", gender: "F", age: 44, maritalStatus: "M",
+      phone1: "+233 27 321 0987", phone1Network: "Vodafone",
+      phone2: "+233 55 678 3421", phone2Network: "MTN",
+      address: "22 Tema Community 5, Greater Accra",
+      emergencyContacts: [
+        { label: "Brothers or sisters", name: "Kofi Whajah",   phone: "+233 24 111 2233" },
+        { label: "Father or mother",    name: "Grace Mensah",  phone: "+233 20 344 5566" },
+        { label: "Spouse",              name: "James Whajah",  phone: "+233 27 788 9900" },
+      ],
+    },
+    loan: {
+      loanId: "3348291764500187263", product: "glowcredit", termType: "7D3T",
+      loanAmount: 900, loanDate: "2026-04-05", loanTerms: 3,
+      overdueDays: 1, overdueAmount: 369.15, amountAfterExemption: 369.15,
+      paidAmount: 530.85, recTotalAmount: 369.15,
+      dueDate: "2026-04-13", currency: "GHS",
+    },
+    actions: [],
+    deductions: [
+      { date: "2026-04-10", amount: 300.00, txId: "TXN556611223", channel: "Mobile Money" },
+      { date: "2026-04-07", amount: 230.85, txId: "TXN443322110", channel: "Bank Transfer" },
+    ],
+  },
+  {
+    id: 4, product: "glowcredit", borrowerType: "Old", caseStatus: "prioritized",
+    callCount: 5, overdueDays: 1, overdueAmount: 255.90,
+    customer: {
+      name: "Christopher Tetteh Gamah", gender: "M", age: 51, maritalStatus: "M",
+      phone1: "+233 24 909 8877", phone1Network: "MTN",
+      phone2: "+233 20 566 7788", phone2Network: "Vodafone",
+      address: "3 Dansoman Estate, Accra",
+      emergencyContacts: [
+        { label: "Spouse", name: "Abena Gamah", phone: "+233 27 443 2211" },
+      ],
+    },
+    loan: {
+      loanId: "5521837465029381746", product: "glowcredit", termType: "30D1T",
+      loanAmount: 2000, loanDate: "2026-03-14", loanTerms: 1,
+      overdueDays: 1, overdueAmount: 255.90, amountAfterExemption: 255.90,
+      paidAmount: 1744.10, recTotalAmount: 255.90,
+      dueDate: "2026-04-13", currency: "GHS",
+    },
+    actions: [
+      { no: 1, time: "2026-04-12 08:45:30", contactName: "Christopher Tetteh Gamah", contactType: "SF", collector: "ENIOLA BALOGUN", contactPhone: "Phone 1", actionCode: "Customer Self", subCode: "Postpone", description: "Says he will pay next week" },
+    ],
+    deductions: [
+      { date: "2026-03-30", amount: 1000.00, txId: "TXN667788990", channel: "Mobile Money" },
+      { date: "2026-03-20", amount: 744.10,  txId: "TXN554433221", channel: "Bank Transfer" },
+    ],
+  },
+  {
+    id: 5, product: "quickfund", borrowerType: "New", caseStatus: "pending",
+    callCount: 2, overdueDays: 5, overdueAmount: 1120.00,
+    customer: {
+      name: "Efua Mensah", gender: "F", age: 33, maritalStatus: "S",
+      phone1: "+233 55 112 3344", phone1Network: "AirtelTigo",
+      phone2: "+233 24 556 7788", phone2Network: "MTN",
+      address: "9 Osu Oxford St, Accra",
+      emergencyContacts: [
+        { label: "Father or mother", name: "Kwame Mensah", phone: "+233 20 998 7766" },
+      ],
+    },
+    loan: {
+      loanId: "8890123456781234567", product: "quickfund", termType: "14D2T",
+      loanAmount: 3000, loanDate: "2026-03-28", loanTerms: 2,
+      overdueDays: 5, overdueAmount: 1120.00, amountAfterExemption: 1120.00,
+      paidAmount: 1880.00, recTotalAmount: 1120.00,
+      dueDate: "2026-04-09", currency: "GHS",
+    },
+    actions: [],
+    deductions: [
+      { date: "2026-04-05", amount: 1880.00, txId: "TXN112233445", channel: "Mobile Money" },
+    ],
+  },
+];
+
+const ACTION_CODES = {
+  "Customer Self": ["PTP","Postpone","Refuse to Pay","Denied Loan","Switched Off","Voicemail","No Number Available","No Answer","Others","Suspected Fraud"],
+  "Contact":       ["PTP","Promise to Pass On","Unwilling to Pass On","Unknown CM","Switched Off","Voicemail","No Number","No One Answered","Others"],
+  "Complaint":     ["Repayment Issues","Customer Service Question","App Issues","Internet Issues","Amount Problem","Other Complaint","Client Death"],
+};
+
+const CASE_TABS = ["All","Unfinished","Prioritized","PTP","Pending","Processed"];
+
 // ─── ICONS ────────────────────────────────────────────────────────────────────
-const Ico = ({ d, size = 16, sw = 1.6 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+const Ico = ({ d, size = 16, sw = 1.6, fill = "none" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}
     stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
     <path d={d} />
   </svg>
 );
+const PhoneIcon = ({ size = 18, color = "#fff" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} stroke={color} strokeWidth="0">
+    <path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1-9.4 0-17-7.6-17-17 0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1L6.6 10.8z"/>
+  </svg>
+);
 const I = {
-  dash:    "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
-  cust:    "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75",
-  loan:    "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
-  collect: "M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11",
-  plus:    "M12 5v14M5 12h14",
+  back:    "M19 12H5M12 5l-7 7 7 7",
+  search:  "M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
+  filter:  "M22 3H2l8 9.46V19l4 2v-8.54L22 3z",
+  sms:     "M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z",
   edit:    "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z",
-  del:     "M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6",
-  srch:    "M21 21l-4.35-4.35M11 19a8 8 0 1 0 0-16 8 8 0 0 0 0 16z",
+  copy:    "M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2M8 4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2M8 4h8",
+  check:   "M20 6L9 17l-5-5",
   x:       "M18 6L6 18M6 6l12 12",
-  chev:    "M9 18l6-6-6-6",
-  phone:   "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.54a16 16 0 0 0 6.29 6.29l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z",
-  alert:   "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01",
-  clock:   "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zM12 6v6l4 2",
-  trend:   "M22 7l-8.5 8.5-5-5L1 17",
+  upload:  "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12",
+  receipt: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8",
+  money:   "M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6",
+  sun:     "M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42M12 5a7 7 0 1 0 0 14A7 7 0 0 0 12 5z",
+  moon:    "M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z",
+  person:  "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
+  dash:    "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",
 };
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
-const pill = (status, t) => {
-  const m = {
-    paid:    [t.paid,    t.paidBg,    "Paid"],
-    pending: [t.pending, t.pendingBg, "Pending"],
-    default: [t.def,     t.defBg,     "Default"],
-  };
-  const [color, bg, label] = m[status] || [t.textMuted, t.surfaceAlt, status];
-  return <span style={{ background: bg, color, fontSize: 11, fontWeight: 600, letterSpacing: "0.04em", padding: "3px 9px", borderRadius: 3, whiteSpace: "nowrap" }}>{label}</span>;
+const caseStatusColor = (cs, t) => {
+  const m = { unfinished: [t.red, t.redLight], prioritized: [t.orange, t.orangeLight], ptp: [t.purple, t.purpleLight], pending: [t.textMuted, t.surfaceAlt], processed: [t.green, t.greenLight] };
+  return m[cs] || [t.textMuted, t.surfaceAlt];
 };
 
-const casePill = (cs, t) => {
-  const m = {
-    unfinished:  ["#e05c5c", "rgba(224,92,92,0.12)",   "Unfinished"],
-    prioritized: ["#d4924a", "rgba(212,146,74,0.12)",  "Prioritized"],
-    ptp:         ["#7b6cf6", "rgba(123,108,246,0.12)", "PTP"],
-    pending:     [t.textMuted, t.surfaceAlt,            "Pending"],
-    processed:   [t.paid,    t.paidBg,                 "Processed"],
-  };
-  const [color, bg, label] = m[cs] || [t.textMuted, t.surfaceAlt, cs];
-  return <span style={{ background: bg, color, fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 8px", borderRadius: 3, whiteSpace: "nowrap" }}>{label}</span>;
+const CasePill = ({ status, t }) => {
+  const [color, bg] = caseStatusColor(status, t);
+  return <span style={{ background: bg, color, fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 3, textTransform: "capitalize", letterSpacing: "0.04em" }}>{status}</span>;
 };
 
-const typeBadge = (type, t) => (
-  <span style={{ fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 3, letterSpacing: "0.06em", textTransform: "uppercase", background: type === "new" ? t.paidBg : t.surfaceAlt, color: type === "new" ? t.paid : t.textMuted, border: `1px solid ${t.border}` }}>
-    {type === "new" ? "New" : "Old"}
-  </span>
+const inputSt = t => ({ width: "100%", background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 8, padding: "11px 14px", color: t.text, fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box", appearance: "none" });
+
+const Label = ({ children, t }) => (
+  <div style={{ fontSize: 11, color: t.textMuted, fontWeight: 500, marginBottom: 4, letterSpacing: "0.03em" }}>{children}</div>
 );
 
-const progBar = (pct, t) => (
-  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-    <div style={{ flex: 1, height: 3, background: t.border, borderRadius: 2 }}>
-      <div style={{ height: "100%", width: `${pct}%`, background: pct === 100 ? t.paid : t.textSub, borderRadius: 2 }} />
+const Value = ({ children, t, color }) => (
+  <div style={{ fontSize: 15, color: color || t.text, fontWeight: 500, marginBottom: 14 }}>{children}</div>
+);
+
+const Row = ({ label, value, t, valueColor }) => (
+  <div style={{ display: "flex", gap: 0, marginBottom: 14 }}>
+    <div style={{ flex: 1 }}>
+      <Label t={t}>{label}</Label>
+      <div style={{ fontSize: 15, color: valueColor || t.text, fontWeight: 500 }}>{value}</div>
     </div>
-    <span style={{ fontSize: 11, color: t.textMuted, minWidth: 28 }}>{pct}%</span>
   </div>
 );
 
-const inputSt = t => ({ width: "100%", background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "10px 12px", color: t.text, fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", appearance: "none" });
-const ibtn = (t, danger = false) => ({ background: "transparent", border: `1px solid ${t.border}`, borderRadius: 6, padding: "6px 8px", color: danger ? t.def : t.textMuted, cursor: "pointer", display: "flex", alignItems: "center" });
-
-// days until / since due
-const daysFrom = (dateStr) => {
-  const due = new Date(dateStr.split(" ").reverse().join(" "));
-  const now = new Date();
-  return Math.round((due - now) / (1000 * 60 * 60 * 24));
-};
-
-// ─── COMPONENTS ───────────────────────────────────────────────────────────────
-const HamburgerIcon = ({ open }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-    {open ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
-  </svg>
-);
-
-function Modal({ title, onClose, t, children }) {
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "0 16px" }}>
-      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 12, width: "100%", maxWidth: 480, padding: 28, boxShadow: "0 24px 48px rgba(0,0,0,0.15)", animation: "su .18s ease", maxHeight: "90vh", overflowY: "auto" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-          <span style={{ fontSize: 15, fontWeight: 600, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>{title}</span>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: t.textMuted, cursor: "pointer", display: "flex" }}><Ico d={I.x} size={15} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function Field({ label, value, onChange, type = "text", opts, t }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "block", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 6 }}>{label}</label>
-      {opts ? <select value={value} onChange={e => onChange(e.target.value)} style={inputSt(t)}>{opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}</select>
-            : <input type={type} value={value} onChange={e => onChange(e.target.value)} style={inputSt(t)} />}
-    </div>
-  );
-}
-
-function ModalBtns({ onCancel, onSave, label, t }) {
-  return (
-    <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-      <button onClick={onCancel} style={{ flex: 1, padding: 11, borderRadius: 7, fontSize: 13, fontWeight: 500, cursor: "pointer", background: t.surfaceAlt, border: `1px solid ${t.border}`, color: t.textSub }}>Cancel</button>
-      <button onClick={onSave} style={{ flex: 1, padding: 11, borderRadius: 7, fontSize: 13, fontWeight: 600, cursor: "pointer", background: t.accent, border: "none", color: t.accentText }}>{label}</button>
-    </div>
-  );
-}
-
-function Th({ children, t }) {
-  return <th style={{ textAlign: "left", fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, paddingBottom: 12, borderBottom: `1px solid ${t.border}`, paddingRight: 16, whiteSpace: "nowrap" }}>{children}</th>;
-}
-
-function StatCard({ label, value, sub, t, accent, icon }) {
-  return (
-    <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: "20px 22px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
-        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.textMuted }}>{label}</div>
-        {icon && <div style={{ color: accent || t.textMuted, opacity: 0.5 }}><Ico d={icon} size={14} /></div>}
-      </div>
-      <div style={{ fontSize: 24, fontWeight: 700, color: accent || t.text, letterSpacing: "-0.03em", marginBottom: 6, fontFamily: "'DM Serif Display',Georgia,serif" }}>{value}</div>
-      <div style={{ fontSize: 12, color: t.textMuted }}>{sub}</div>
-    </div>
-  );
-}
-
-// Scrollable table wrapper for mobile
-const ScrollTable = ({ children }) => (
-  <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
-    <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 520 }}>
-      {children}
-    </table>
+const TwoCol = ({ left, right, t }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 0 }}>
+    <div><Label t={t}>{left.label}</Label><div style={{ fontSize: 15, color: left.color || t.text, fontWeight: 500 }}>{left.value}</div></div>
+    <div><Label t={t}>{right.label}</Label><div style={{ fontSize: 15, color: right.color || t.text, fontWeight: 500 }}>{right.value}</div></div>
   </div>
 );
 
-// ─── DASHBOARD PAGE ───────────────────────────────────────────────────────────
-function Dashboard({ loans, customers, t, isMobile }) {
-  const total      = loans.reduce((s, l) => s + l.amount, 0);
-  const repaid     = loans.reduce((s, l) => s + l.repaid, 0);
-  const outstanding = total - repaid;
-  const atRisk     = loans.filter(l => l.status === "default").reduce((s, l) => s + (l.amount - l.repaid), 0);
-  const overdueLoans = loans.filter(l => l.overdueDays > 0);
-  const totalCalls = loans.reduce((s, l) => s + l.callCount, 0);
-  const avgOverdue = overdueLoans.length ? Math.round(overdueLoans.reduce((s, l) => s + l.overdueDays, 0) / overdueLoans.length) : 0;
-  const recent     = [...loans].reverse().slice(0, 5);
+const Divider = ({ t }) => <div style={{ height: 1, background: t.border, margin: "16px 0" }} />;
 
-  return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: t.text, letterSpacing: "-0.03em", fontFamily: "'DM Serif Display',Georgia,serif" }}>Overview</h1>
-        <p style={{ margin: "5px 0 0", fontSize: 13, color: t.textMuted }}>{loans.length} loans · {customers.length} customers</p>
-      </div>
+// ─── RECORD MODAL ─────────────────────────────────────────────────────────────
+function RecordModal({ t, onClose, onSubmit, customerName }) {
+  const [category, setCategory] = useState(null);
+  const [subCode, setSubCode]   = useState(null);
+  const [remark, setRemark]     = useState("");
 
-      {/* Row 1: Portfolio stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 10 }}>
-        <StatCard label="Portfolio"   value={`$${(total/1000).toFixed(1)}k`}       sub="Total disbursed"                                      t={t} icon={I.loan} />
-        <StatCard label="Recovered"   value={`$${(repaid/1000).toFixed(1)}k`}      sub={`${Math.round(repaid/total*100)}% recovery rate`}     t={t} accent={t.paid}    icon={I.trend} />
-        <StatCard label="Outstanding" value={`$${(outstanding/1000).toFixed(1)}k`} sub={`${loans.filter(l=>l.status==="pending").length} open`} t={t} accent={t.pending} icon={I.clock} />
-        <StatCard label="At Risk"     value={`$${(atRisk/1000).toFixed(1)}k`}      sub={`${loans.filter(l=>l.status==="default").length} defaults`} t={t} accent={t.def} icon={I.alert} />
-      </div>
+  const cats = Object.keys(ACTION_CODES);
 
-      {/* Row 2: Collection stats */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10, marginBottom: 20 }}>
-        <StatCard label="Overdue Cases"   value={overdueLoans.length}               sub={`Avg ${avgOverdue} days overdue`}           t={t} accent={t.def}     icon={I.alert} />
-        <StatCard label="Total Calls"     value={totalCalls}                        sub={`Across ${loans.length} cases`}             t={t} icon={I.phone} />
-        <StatCard label="Prioritized"     value={loans.filter(l=>l.caseStatus==="prioritized").length} sub="Need immediate action"   t={t} accent={t.pending} icon={I.collect} />
-        <StatCard label="PTP Cases"       value={loans.filter(l=>l.caseStatus==="ptp").length}         sub="Promise to pay"          t={t} accent="#7b6cf6"   icon={I.collect} />
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 260px", gap: 12 }}>
-        {/* Recent activity */}
-        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 22 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.textSub, marginBottom: 16 }}>Recent Activity</div>
-          <ScrollTable>
-            <thead><tr><Th t={t}>ID</Th><Th t={t}>Customer</Th><Th t={t}>Amount</Th><Th t={t}>Overdue</Th><Th t={t}>Status</Th></tr></thead>
-            <tbody>
-              {recent.map(l => (
-                <tr key={l.id}>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 11, color: t.textMuted, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{l.id}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 13, color: t.text, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{l.customer}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 13, fontWeight: 600, color: t.text, borderBottom: `1px solid ${t.border}` }}>${l.amount.toLocaleString()}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 12, color: l.overdueDays > 0 ? t.def : t.paid, fontWeight: 600, borderBottom: `1px solid ${t.border}` }}>
-                    {l.overdueDays > 0 ? `${l.overdueDays}d` : "—"}
-                  </td>
-                  <td style={{ padding: "12px 0", borderBottom: `1px solid ${t.border}` }}>{pill(l.status, t)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </ScrollTable>
-        </div>
-
-        {/* Health */}
-        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 22 }}>
-          <div style={{ fontSize: 11, fontWeight: 600, color: t.textSub, marginBottom: 18 }}>Portfolio Health</div>
-          {[
-            { key: "paid",    label: "Paid",    color: t.paid },
-            { key: "pending", label: "Pending", color: t.pending },
-            { key: "default", label: "Default", color: t.def },
-          ].map(s => {
-            const n = loans.filter(l => l.status === s.key).length;
-            const p = Math.round(n / loans.length * 100);
-            return (
-              <div key={s.key} style={{ marginBottom: 18 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-                  <span style={{ fontSize: 12, color: t.textSub }}>{s.label}</span>
-                  <span style={{ fontSize: 12, color: s.color, fontWeight: 600 }}>{n} / {p}%</span>
-                </div>
-                <div style={{ height: 3, background: t.border, borderRadius: 2 }}>
-                  <div style={{ height: "100%", width: `${p}%`, background: s.color, borderRadius: 2 }} />
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Case status breakdown */}
-          <div style={{ marginTop: 20, paddingTop: 18, borderTop: `1px solid ${t.border}` }}>
-            <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 12 }}>Case Status</div>
-            {["unfinished","prioritized","ptp","pending","processed"].map(cs => {
-              const n = loans.filter(l => l.caseStatus === cs).length;
-              if (!n) return null;
-              return (
-                <div key={cs} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                  {casePill(cs, t)}
-                  <span style={{ fontSize: 12, color: t.textMuted }}>{n} case{n > 1 ? "s" : ""}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── COLLECTIONS PAGE (inspired by real app) ─────────────────────────────────
-function Collections({ loans, setLoans, customers, t, isMobile }) {
-  const [tab, setTab]   = useState("all");
-  const [q, setQ]       = useState("");
-
-  const tabs = ["all","unfinished","prioritized","ptp","pending","processed"];
-
-  const list = loans.filter(l => {
-    const ms = l.customer.toLowerCase().includes(q.toLowerCase()) || l.id.toLowerCase().includes(q.toLowerCase());
-    return ms && (tab === "all" || l.caseStatus === tab);
-  }).filter(l => l.status !== "paid"); // collections = only active/problem loans
-
-  const updateCaseStatus = (id, caseStatus) => {
-    setLoans(p => p.map(l => l.id === id ? { ...l, caseStatus } : l));
+  const submit = () => {
+    if (!category || !subCode) return;
+    onSubmit({ actionCode: category, subCode, description: remark, contactName: customerName, time: new Date().toISOString().replace("T", " ").slice(0, 19) });
+    onClose();
   };
 
   return (
-    <div>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: t.text, letterSpacing: "-0.03em", fontFamily: "'DM Serif Display',Georgia,serif" }}>Collections</h1>
-        <p style={{ margin: "5px 0 0", fontSize: 13, color: t.textMuted }}>{list.length} active cases</p>
-      </div>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div style={{ background: t.surface, borderRadius: "20px 20px 0 0", padding: "24px 20px 36px", maxHeight: "88vh", overflowY: "auto" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>Record Action</span>
+          <button onClick={onClose} style={{ background: t.surfaceAlt, border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: t.textSub }}><Ico d={I.x} size={15} /></button>
+        </div>
 
-      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: isMobile ? 16 : 22 }}>
-        {/* Tab bar */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto", paddingBottom: 4 }}>
-          {tabs.map(tb => (
-            <button key={tb} onClick={() => setTab(tb)} style={{
-              padding: "7px 14px", fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer", borderRadius: 6,
-              background: tab === tb ? t.accent : "transparent",
-              color: tab === tb ? t.accentText : t.textMuted,
-              whiteSpace: "nowrap", fontFamily: "inherit", textTransform: "capitalize", transition: "all 0.15s",
-            }}>{tb === "all" ? "All" : tb.charAt(0).toUpperCase() + tb.slice(1)}</button>
+        {/* Step 1 — Category */}
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 10 }}>Action Code</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
+          {cats.map(c => (
+            <button key={c} onClick={() => { setCategory(c); setSubCode(null); }}
+              style={{ flex: 1, padding: "10px 6px", fontSize: 12, fontWeight: 600, borderRadius: 8, border: `1.5px solid ${category === c ? t.blue : t.border}`, background: category === c ? t.blueLight : t.surfaceAlt, color: category === c ? t.blue : t.textSub, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+              {c}
+            </button>
           ))}
         </div>
 
-        {/* Search */}
-        <div style={{ position: "relative", marginBottom: 16 }}>
-          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textMuted }}><Ico d={I.srch} size={14} /></div>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search cases…" style={{ ...inputSt(t), paddingLeft: 36 }} />
-        </div>
+        {/* Step 2 — Sub options */}
+        {category && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 10 }}>Result</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+              {ACTION_CODES[category].map(opt => (
+                <button key={opt} onClick={() => setSubCode(opt)}
+                  style={{ padding: "8px 14px", fontSize: 13, fontWeight: 500, borderRadius: 20, border: `1.5px solid ${subCode === opt ? t.blue : t.border}`, background: subCode === opt ? t.blueLight : "transparent", color: subCode === opt ? t.blue : t.textSub, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
-        <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 14 }}>{list.length} case{list.length !== 1 ? "s" : ""}</div>
-
-        {/* Case cards — mobile-friendly card layout */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {list.map((l, idx) => {
-            const cust = customers.find(c => c.id === l.customerId);
-            return (
-              <div key={l.id} style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 8, padding: "16px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <span style={{ fontSize: 11, color: t.textMuted, fontWeight: 600, minWidth: 20 }}>{idx + 1}</span>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: t.text }}>{l.customer}</span>
-                        {cust && typeBadge(cust.type, t)}
-                      </div>
-                      <div style={{ fontSize: 11, color: t.textMuted, marginTop: 2 }}>{l.id} · {l.purpose}</div>
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                    {casePill(l.caseStatus, t)}
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 12 }}>
-                  <div style={{ background: t.surface, borderRadius: 6, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>Amount</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: t.text }}>${l.amount.toLocaleString()}</div>
-                  </div>
-                  <div style={{ background: t.surface, borderRadius: 6, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>Overdue</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: l.overdueDays > 0 ? t.def : t.paid }}>
-                      {l.overdueDays > 0 ? `${l.overdueDays} days` : "None"}
-                    </div>
-                  </div>
-                  <div style={{ background: t.surface, borderRadius: 6, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 10, color: t.textMuted, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em" }}>Calls</div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: t.text }}>{l.callCount} times</div>
-                  </div>
-                </div>
-
-                {/* Progress */}
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: t.textMuted, marginBottom: 5 }}>
-                    <span>Repaid ${l.repaid.toLocaleString()}</span>
-                    <span>{Math.round(l.repaid / l.amount * 100)}%</span>
-                  </div>
-                  {progBar(Math.round(l.repaid / l.amount * 100), t)}
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {["unfinished","prioritized","ptp","processed"].map(cs => (
-                    <button key={cs} onClick={() => updateCaseStatus(l.id, cs)}
-                      style={{ fontSize: 10, fontWeight: 600, padding: "5px 10px", borderRadius: 5, border: `1px solid ${t.border}`, cursor: "pointer", background: l.caseStatus === cs ? t.accent : "transparent", color: l.caseStatus === cs ? t.accentText : t.textMuted, fontFamily: "inherit", textTransform: "capitalize", transition: "all 0.15s" }}>
-                      {cs}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-          {!list.length && <div style={{ textAlign: "center", padding: "40px 0", fontSize: 13, color: t.textMuted }}>No cases found.</div>}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── CUSTOMERS PAGE ───────────────────────────────────────────────────────────
-function Customers({ customers, setCustomers, loans, t }) {
-  const [q, setQ]       = useState("");
-  const [modal, setM]   = useState(null);
-  const [form, setForm] = useState({ name: "", email: "", phone: "", type: "new" });
-  const upd = v => setForm(p => ({ ...p, ...v }));
-
-  const list = customers.filter(c =>
-    c.name.toLowerCase().includes(q.toLowerCase()) ||
-    c.email.toLowerCase().includes(q.toLowerCase())
-  );
-
-  const save = () => {
-    if (!form.name.trim()) return;
-    if (modal.mode === "add") {
-      const av = form.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-      setCustomers(p => [...p, { id: Date.now(), ...form, avatar: av, joined: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) }]);
-    } else {
-      setCustomers(p => p.map(c => c.id === modal.data.id ? { ...c, ...form } : c));
-    }
-    setM(null);
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: t.text, letterSpacing: "-0.03em", fontFamily: "'DM Serif Display',Georgia,serif" }}>Customers</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: t.textMuted }}>{customers.length} registered</p>
-        </div>
-        <button onClick={() => { setForm({ name: "", email: "", phone: "", type: "new" }); setM({ mode: "add" }); }}
-          style={{ display: "flex", alignItems: "center", gap: 7, background: t.accent, color: t.accentText, border: "none", borderRadius: 7, padding: "9px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-          <Ico d={I.plus} size={13} /> Add
-        </button>
-      </div>
-
-      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 22 }}>
-        <div style={{ position: "relative", marginBottom: 18 }}>
-          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textMuted }}><Ico d={I.srch} size={14} /></div>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search customers…" style={{ ...inputSt(t), paddingLeft: 36 }} />
-        </div>
-
-        <ScrollTable>
-          <thead>
-            <tr><Th t={t}>Name</Th><Th t={t}>Type</Th><Th t={t}>Email</Th><Th t={t}>Phone</Th><Th t={t}>Joined</Th><Th t={t}>Loans</Th><Th t={t}></Th></tr>
-          </thead>
-          <tbody>
-            {list.map(c => (
-              <tr key={c.id}
-                onMouseEnter={e => e.currentTarget.style.background = t.surfaceAlt}
-                onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                <td style={{ padding: "13px 16px 13px 0", borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: "50%", background: t.surfaceAlt, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 700, color: t.textSub, flexShrink: 0 }}>{c.avatar}</div>
-                    <span style={{ fontSize: 13, color: t.text, fontWeight: 500 }}>{c.name}</span>
-                  </div>
-                </td>
-                <td style={{ padding: "13px 16px 13px 0", borderBottom: `1px solid ${t.border}` }}>{typeBadge(c.type || "old", t)}</td>
-                <td style={{ padding: "13px 16px 13px 0", fontSize: 12, color: t.textMuted, borderBottom: `1px solid ${t.border}` }}>{c.email}</td>
-                <td style={{ padding: "13px 16px 13px 0", fontSize: 12, color: t.textMuted, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{c.phone}</td>
-                <td style={{ padding: "13px 16px 13px 0", fontSize: 12, color: t.textMuted, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{c.joined}</td>
-                <td style={{ padding: "13px 16px 13px 0", fontSize: 12, color: t.text, fontWeight: 600, borderBottom: `1px solid ${t.border}` }}>{loans.filter(l => l.customerId === c.id).length}</td>
-                <td style={{ padding: "13px 0", borderBottom: `1px solid ${t.border}` }}>
-                  <div style={{ display: "flex", gap: 6 }}>
-                    <button style={ibtn(t)} onClick={() => { setForm({ name: c.name, email: c.email, phone: c.phone, type: c.type || "old" }); setM({ mode: "edit", data: c }); }}><Ico d={I.edit} size={13} /></button>
-                    <button style={ibtn(t, true)} onClick={() => { if (confirm("Delete customer?")) setCustomers(p => p.filter(x => x.id !== c.id)); }}><Ico d={I.del} size={13} /></button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </ScrollTable>
-        {!list.length && <div style={{ textAlign: "center", padding: "40px 0", fontSize: 13, color: t.textMuted }}>No results.</div>}
-      </div>
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "New Customer" : "Edit Customer"} onClose={() => setM(null)} t={t}>
-          <Field label="Full Name"   value={form.name}  onChange={v => upd({ name: v })}  t={t} />
-          <Field label="Email"       value={form.email} onChange={v => upd({ email: v })} type="email" t={t} />
-          <Field label="Phone"       value={form.phone} onChange={v => upd({ phone: v })} t={t} />
-          <Field label="Borrower Type" value={form.type} onChange={v => upd({ type: v })} opts={[{ v: "new", l: "New Borrower" }, { v: "old", l: "Returning Borrower" }]} t={t} />
-          <ModalBtns onCancel={() => setM(null)} onSave={save} label={modal.mode === "add" ? "Add Customer" : "Save"} t={t} />
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-// ─── LOANS PAGE ───────────────────────────────────────────────────────────────
-function Loans({ loans, setLoans, customers, t }) {
-  const [q, setQ]       = useState("");
-  const [filter, setF]  = useState("all");
-  const [modal, setM]   = useState(null);
-  const [form, setForm] = useState({ customerId: "", amount: "", purpose: "", status: "pending", due: "", overdueDays: 0, caseStatus: "pending" });
-  const upd = v => setForm(p => ({ ...p, ...v }));
-
-  const list = loans.filter(l => {
-    const ms = l.customer.toLowerCase().includes(q.toLowerCase()) || l.id.toLowerCase().includes(q.toLowerCase());
-    return ms && (filter === "all" || l.status === filter);
-  });
-
-  const save = () => {
-    const cust = customers.find(c => c.id === Number(form.customerId) || c.id === form.customerId);
-    if (!cust || !form.amount) return;
-    if (modal.mode === "add") {
-      setLoans(p => [...p, { id: `LN-${String(p.length + 41).padStart(4, "0")}`, customerId: cust.id, customer: cust.name, amount: Number(form.amount), repaid: 0, issued: new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }), due: form.due, status: form.status, purpose: form.purpose, overdueDays: Number(form.overdueDays) || 0, callCount: 0, caseStatus: form.caseStatus }]);
-    } else {
-      setLoans(p => p.map(l => l.id === modal.data.id ? { ...l, status: form.status, purpose: form.purpose, due: form.due, overdueDays: Number(form.overdueDays) || 0, caseStatus: form.caseStatus } : l));
-    }
-    setM(null);
-  };
-
-  const tabs = ["all", "paid", "pending", "default"];
-
-  return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: t.text, letterSpacing: "-0.03em", fontFamily: "'DM Serif Display',Georgia,serif" }}>Loans</h1>
-          <p style={{ margin: "5px 0 0", fontSize: 13, color: t.textMuted }}>{loans.length} records</p>
-        </div>
-        <button onClick={() => { setForm({ customerId: customers[0]?.id || "", amount: "", purpose: "", status: "pending", due: "", overdueDays: 0, caseStatus: "pending" }); setM({ mode: "add" }); }}
-          style={{ display: "flex", alignItems: "center", gap: 7, background: t.accent, color: t.accentText, border: "none", borderRadius: 7, padding: "9px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
-          <Ico d={I.plus} size={13} /> New Loan
-        </button>
-      </div>
-
-      <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: 22 }}>
-        <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
-          <div style={{ position: "relative", flex: 1, minWidth: 160 }}>
-            <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textMuted }}><Ico d={I.srch} size={14} /></div>
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search…" style={{ ...inputSt(t), paddingLeft: 36 }} />
-          </div>
-          <div style={{ display: "flex", border: `1px solid ${t.border}`, borderRadius: 7, overflow: "hidden" }}>
-            {tabs.map(tab => (
-              <button key={tab} onClick={() => setF(tab)} style={{ padding: "8px 14px", fontSize: 11, fontWeight: 500, border: "none", cursor: "pointer", background: filter === tab ? t.surfaceAlt : "transparent", color: filter === tab ? t.text : t.textMuted, borderRight: `1px solid ${t.border}`, textTransform: "capitalize", transition: "all 0.15s", fontFamily: "inherit" }}>{tab}</button>
-            ))}
-          </div>
-        </div>
-
-        <ScrollTable>
-          <thead>
-            <tr><Th t={t}>ID</Th><Th t={t}>Customer</Th><Th t={t}>Amount</Th><Th t={t}>Repaid</Th><Th t={t}>Progress</Th><Th t={t}>Overdue</Th><Th t={t}>Calls</Th><Th t={t}>Status</Th><Th t={t}>Case</Th><Th t={t}></Th></tr>
-          </thead>
-          <tbody>
-            {list.map(l => {
-              const pct = Math.round(l.repaid / l.amount * 100);
-              return (
-                <tr key={l.id}
-                  onMouseEnter={e => e.currentTarget.style.background = t.surfaceAlt}
-                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 11, color: t.textMuted, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{l.id}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 13, color: t.text, borderBottom: `1px solid ${t.border}`, whiteSpace: "nowrap" }}>{l.customer}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 13, fontWeight: 600, color: t.text, borderBottom: `1px solid ${t.border}` }}>${l.amount.toLocaleString()}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 13, color: t.paid, borderBottom: `1px solid ${t.border}` }}>${l.repaid.toLocaleString()}</td>
-                  <td style={{ padding: "12px 16px 12px 0", minWidth: 90, borderBottom: `1px solid ${t.border}` }}>{progBar(pct, t)}</td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 12, fontWeight: 600, color: l.overdueDays > 0 ? t.def : t.textMuted, borderBottom: `1px solid ${t.border}` }}>
-                    {l.overdueDays > 0 ? `${l.overdueDays}d` : "—"}
-                  </td>
-                  <td style={{ padding: "12px 16px 12px 0", fontSize: 12, color: t.textSub, borderBottom: `1px solid ${t.border}` }}>{l.callCount}×</td>
-                  <td style={{ padding: "12px 16px 12px 0", borderBottom: `1px solid ${t.border}` }}>{pill(l.status, t)}</td>
-                  <td style={{ padding: "12px 16px 12px 0", borderBottom: `1px solid ${t.border}` }}>{casePill(l.caseStatus, t)}</td>
-                  <td style={{ padding: "12px 0", borderBottom: `1px solid ${t.border}` }}>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <button style={ibtn(t)} onClick={() => { setForm({ customerId: l.customerId, amount: l.amount, purpose: l.purpose, status: l.status, due: l.due, overdueDays: l.overdueDays, caseStatus: l.caseStatus }); setM({ mode: "edit", data: l }); }}><Ico d={I.edit} size={13} /></button>
-                      <button style={ibtn(t, true)} onClick={() => { if (confirm("Delete loan?")) setLoans(p => p.filter(x => x.id !== l.id)); }}><Ico d={I.del} size={13} /></button>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </ScrollTable>
-        {!list.length && <div style={{ textAlign: "center", padding: "40px 0", fontSize: 13, color: t.textMuted }}>No loans found.</div>}
-      </div>
-
-      {modal && (
-        <Modal title={modal.mode === "add" ? "Issue Loan" : "Edit Loan"} onClose={() => setM(null)} t={t}>
-          {modal.mode === "add" && <>
-            <Field label="Customer" value={form.customerId} onChange={v => upd({ customerId: v })} opts={customers.map(c => ({ v: c.id, l: c.name }))} t={t} />
-            <Field label="Amount ($)" value={form.amount} onChange={v => upd({ amount: v })} type="number" t={t} />
-          </>}
-          <Field label="Purpose" value={form.purpose} onChange={v => upd({ purpose: v })} t={t} />
-          <Field label="Due Date" value={form.due} onChange={v => upd({ due: v })} t={t} />
-          <Field label="Overdue Days" value={form.overdueDays} onChange={v => upd({ overdueDays: v })} type="number" t={t} />
-          <Field label="Loan Status" value={form.status} onChange={v => upd({ status: v })} opts={[{ v: "pending", l: "Pending" }, { v: "paid", l: "Paid" }, { v: "default", l: "Default" }]} t={t} />
-          <Field label="Case Status" value={form.caseStatus} onChange={v => upd({ caseStatus: v })} opts={[{ v: "pending", l: "Pending" }, { v: "unfinished", l: "Unfinished" }, { v: "prioritized", l: "Prioritized" }, { v: "ptp", l: "PTP" }, { v: "processed", l: "Processed" }]} t={t} />
-          <ModalBtns onCancel={() => setM(null)} onSave={save} label={modal.mode === "add" ? "Issue Loan" : "Save"} t={t} />
-        </Modal>
-      )}
-    </div>
-  );
-}
-
-// ─── SIDEBAR CONTENT ─────────────────────────────────────────────────────────
-function SidebarContent({ t, page, setPage, nav, handleLogoClick, onNavClick }) {
-  return (
-    <>
-      <div onClick={handleLogoClick} style={{ padding: "22px 20px 18px", borderBottom: `1px solid ${t.border}`, cursor: "default", userSelect: "none", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 5, background: t.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.accentText} strokeWidth="2.4" strokeLinecap="round">
-              <line x1="12" y1="1" x2="12" y2="23"/>
-              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-            </svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: t.text, letterSpacing: "-0.02em", fontFamily: "'DM Serif Display',Georgia,serif" }}>LendFlow</div>
-            <div style={{ fontSize: 9, color: t.textMuted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Finance OS</div>
-          </div>
-        </div>
-      </div>
-
-      <nav style={{ flex: 1, padding: "14px 10px", overflowY: "auto" }}>
-        <div style={{ fontSize: 9, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: t.textMuted, padding: "0 10px 10px" }}>Menu</div>
-        {nav.map(item => {
-          const active = page === item.key;
-          return (
-            <button key={item.key} onClick={() => { setPage(item.key); onNavClick?.(); }}
-              style={{ width: "100%", display: "flex", alignItems: "center", gap: 10, padding: "11px 10px", background: active ? t.surfaceAlt : "transparent", borderRadius: 7, border: "none", cursor: "pointer", color: active ? t.text : t.textSub, fontWeight: active ? 500 : 400, fontSize: 13, textAlign: "left", marginBottom: 2, transition: "all 0.15s", fontFamily: "inherit" }}>
-              <Ico d={item.icon} size={15} sw={active ? 2 : 1.5} />
-              {item.label}
-              {active && <span style={{ marginLeft: "auto", opacity: 0.3 }}><Ico d={I.chev} size={12} /></span>}
+        {/* Step 3 — Remark */}
+        {subCode && (
+          <>
+            <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 10 }}>Action Remark</div>
+            <textarea value={remark} onChange={e => setRemark(e.target.value)}
+              placeholder="Describe the interaction with the customer…"
+              style={{ ...inputSt(t), minHeight: 90, resize: "vertical", lineHeight: 1.5 }} />
+            <button onClick={submit}
+              style={{ width: "100%", marginTop: 16, padding: "14px", background: t.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+              Submit Record
             </button>
-          );
-        })}
-      </nav>
-
-      <div style={{ padding: "14px 20px", borderTop: `1px solid ${t.border}`, flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 26, height: 26, borderRadius: "50%", background: t.surfaceAlt, border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: t.textSub }}>AD</div>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: t.text }}>Admin</div>
-            <div style={{ fontSize: 10, color: t.textMuted }}>Super User</div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-    </>
+    </div>
   );
 }
 
-// ─── ROOT APP ─────────────────────────────────────────────────────────────────
-export default function App() {
-  const [dark, setDark]           = useState(false);
-  const [page, setPage]           = useState("dashboard");
-  const [customers, setCustomers] = useState(mockCustomers);
-  const [loans, setLoans]         = useState(mockLoans);
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const [isMobile, setIsMobile]   = useState(window.innerWidth < 768);
+// ─── SMS MODAL ────────────────────────────────────────────────────────────────
+function SmsModal({ t, onClose, customerName, phone1, phone2 }) {
+  const template = `Dear ${customerName}, your loan repayment is overdue. Please make payment immediately to avoid further charges. Click here to repay: https://pay.lendflow.app/repay — LendFlow Finance`;
+  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    const h = () => { const m = window.innerWidth < 768; setIsMobile(m); if (!m) setMenuOpen(false); };
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
+  const copy = () => { navigator.clipboard?.writeText(template); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  useEffect(() => {
-    const h = e => { if (e.key === "Escape") setMenuOpen(false); };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
-  }, []);
+  return (
+    <div style={{ position: "fixed", inset: 0, background: t.bg, zIndex: 500, display: "flex", flexDirection: "column" }}>
+      <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: t.text, display: "flex" }}><Ico d={I.back} size={20} sw={2} /></button>
+        <span style={{ fontSize: 16, fontWeight: 700, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>Send SMS</span>
+      </div>
+      <div style={{ flex: 1, padding: "24px 20px", overflowY: "auto" }}>
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 12 }}>Message Template</div>
+        <div style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 12, padding: 18, fontSize: 14, color: t.text, lineHeight: 1.7, marginBottom: 20 }}>{template}</div>
 
+        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.textMuted, marginBottom: 12 }}>Send To</div>
+        {[{ label: "Phone 1", number: phone1 }, { label: "Phone 2", number: phone2 }].map(p => (
+          <div key={p.label} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 3 }}>{p.label}</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: t.text }}>{p.number}</div>
+            </div>
+            <a href={`sms:${p.number}?body=${encodeURIComponent(template)}`}
+              style={{ background: t.green, color: "#fff", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", textDecoration: "none", display: "flex", alignItems: "center", gap: 6 }}>
+              <Ico d={I.sms} size={14} /> Send
+            </a>
+          </div>
+        ))}
+
+        <button onClick={copy} style={{ width: "100%", marginTop: 8, padding: "13px", background: copied ? t.greenLight : t.surfaceAlt, color: copied ? t.green : t.textSub, border: `1px solid ${copied ? t.green : t.border}`, borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.2s" }}>
+          <Ico d={copied ? I.check : I.copy} size={15} /> {copied ? "Copied!" : "Copy Message"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── RECONCILIATION MODAL ─────────────────────────────────────────────────────
+function ReconciliationModal({ t, onClose }) {
+  const [form, setForm] = useState({ issueType: "", amount: "", repaymentDate: "", trueNumber: "", repaymentNumber: "", channel: "", txId: "", remark: "" });
+  const upd = v => setForm(p => ({ ...p, ...v }));
+  const issueTypes = ["Payment Not Reflected","Wrong Amount","Duplicate Payment","Reversal Request","Other"];
+  const channels   = ["Mobile Money","Bank Transfer","Cash","POS","Other"];
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: t.bg, zIndex: 500, display: "flex", flexDirection: "column" }}>
+      <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14 }}>
+        <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: t.text, display: "flex" }}><Ico d={I.back} size={20} sw={2} /></button>
+        <span style={{ fontSize: 16, fontWeight: 700, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>Reconciliation</span>
+      </div>
+      <div style={{ flex: 1, padding: "20px", overflowY: "auto" }}>
+        <div style={{ marginBottom: 14 }}>
+          <Label t={t}>Issue Type</Label>
+          <select value={form.issueType} onChange={e => upd({ issueType: e.target.value })} style={inputSt(t)}>
+            <option value="">Select issue type</option>
+            {issueTypes.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+        <div style={{ marginBottom: 14 }}><Label t={t}>Amount</Label><input type="number" value={form.amount} onChange={e => upd({ amount: e.target.value })} placeholder="0.00" style={inputSt(t)} /></div>
+        <div style={{ marginBottom: 14 }}><Label t={t}>Repayment Date</Label><input type="date" value={form.repaymentDate} onChange={e => upd({ repaymentDate: e.target.value })} style={inputSt(t)} /></div>
+
+        {/* Picture upload */}
+        <div style={{ marginBottom: 14 }}>
+          <Label t={t}>Picture / Receipt</Label>
+          <div style={{ border: `2px dashed ${t.border}`, borderRadius: 10, padding: "24px", textAlign: "center", background: t.surfaceAlt, cursor: "pointer" }}>
+            <div style={{ color: t.textMuted, marginBottom: 6 }}><Ico d={I.upload} size={24} /></div>
+            <div style={{ fontSize: 13, color: t.textMuted }}>Tap to upload image</div>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 14 }}><Label t={t}>True Registered Number</Label><input type="tel" value={form.trueNumber} onChange={e => upd({ trueNumber: e.target.value })} placeholder="+233 XX XXX XXXX" style={inputSt(t)} /></div>
+        <div style={{ marginBottom: 14 }}><Label t={t}>Repayment Number</Label><input type="tel" value={form.repaymentNumber} onChange={e => upd({ repaymentNumber: e.target.value })} placeholder="+233 XX XXX XXXX" style={inputSt(t)} /></div>
+        <div style={{ marginBottom: 14 }}>
+          <Label t={t}>Repayment Channel</Label>
+          <select value={form.channel} onChange={e => upd({ channel: e.target.value })} style={inputSt(t)}>
+            <option value="">Select channel</option>
+            {channels.map(o => <option key={o} value={o}>{o}</option>)}
+          </select>
+        </div>
+        <div style={{ marginBottom: 14 }}><Label t={t}>Transaction ID</Label><input value={form.txId} onChange={e => upd({ txId: e.target.value })} placeholder="TXN..." style={inputSt(t)} /></div>
+        <div style={{ marginBottom: 24 }}>
+          <Label t={t}>Remark</Label>
+          <textarea value={form.remark} onChange={e => upd({ remark: e.target.value })} placeholder="Additional notes…" style={{ ...inputSt(t), minHeight: 80, resize: "vertical" }} />
+        </div>
+
+        <button style={{ width: "100%", padding: "15px", background: t.blue, color: "#fff", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+          Submit Reconciliation
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── EXEMPT MODAL ─────────────────────────────────────────────────────────────
+function ExemptModal({ t, onClose, overdueAmount, currency }) {
+  const [agreed, setAgreed] = useState(false);
+  const [remark, setRemark]  = useState("");
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 500, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+      <div style={{ background: t.surface, borderRadius: "20px 20px 0 0", padding: "24px 20px 36px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <span style={{ fontSize: 17, fontWeight: 700, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>Exempt Customer</span>
+          <button onClick={onClose} style={{ background: t.surfaceAlt, border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: t.textSub }}><Ico d={I.x} size={15} /></button>
+        </div>
+
+        <div style={{ background: t.orangeLight, border: `1px solid ${t.orange}`, borderRadius: 10, padding: "14px 16px", marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: t.orange, fontWeight: 600, marginBottom: 4 }}>EXEMPTION AGREEMENT</div>
+          <div style={{ fontSize: 14, color: t.text, lineHeight: 1.6 }}>
+            Customer agrees to pay the initial overdue amount of <strong style={{ color: t.orange }}>{currency} {overdueAmount.toFixed(2)}</strong> only. All penalties and additional interest will be waived upon successful payment.
+          </div>
+        </div>
+
+        <button onClick={() => setAgreed(a => !a)}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 12, background: "transparent", border: `1.5px solid ${agreed ? t.green : t.border}`, borderRadius: 10, padding: "12px 16px", cursor: "pointer", marginBottom: 16, fontFamily: "inherit" }}>
+          <div style={{ width: 22, height: 22, borderRadius: 5, background: agreed ? t.green : t.surfaceAlt, border: `1.5px solid ${agreed ? t.green : t.borderStrong}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, transition: "all 0.2s" }}>
+            {agreed && <Ico d={I.check} size={13} sw={2.5} />}
+          </div>
+          <span style={{ fontSize: 14, color: t.text }}>Customer agrees to pay <strong>{currency} {overdueAmount.toFixed(2)}</strong></span>
+        </button>
+
+        <div style={{ marginBottom: 16 }}>
+          <Label t={t}>Remark</Label>
+          <textarea value={remark} onChange={e => setRemark(e.target.value)} placeholder="Reason for exemption…" style={{ ...inputSt(t), minHeight: 70, resize: "none" }} />
+        </div>
+
+        <button disabled={!agreed}
+          style={{ width: "100%", padding: "14px", background: agreed ? t.green : t.surfaceAlt, color: agreed ? "#fff" : t.textMuted, border: "none", borderRadius: 10, fontSize: 15, fontWeight: 700, cursor: agreed ? "pointer" : "default", fontFamily: "inherit", transition: "all 0.2s" }}>
+          Confirm Exemption
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── BOTTOM ACTION BAR ────────────────────────────────────────────────────────
+function BottomBar({ t, onRecord, onSms, onReconciliation, onExempt }) {
+  const btns = [
+    { label: "Record",          action: onRecord,          color: t.blue },
+    { label: "SMS",             action: onSms,             color: t.green },
+    { label: "Reconciliation",  action: onReconciliation,  color: t.orange },
+    { label: "Exempt",          action: onExempt,          color: t.purple },
+  ];
+  return (
+    <div style={{ position: "sticky", bottom: 0, background: "rgba(15,15,14,0.95)", backdropFilter: "blur(12px)", borderTop: `1px solid rgba(255,255,255,0.08)`, display: "flex", padding: "10px 8px 18px" }}>
+      {btns.map(b => (
+        <button key={b.label} onClick={b.action}
+          style={{ flex: 1, background: "transparent", border: "none", cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 600, padding: "8px 4px", fontFamily: "inherit", opacity: 0.9 }}>
+          {b.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── CUSTOMER INFO TAB ────────────────────────────────────────────────────────
+function CustomerInfoTab({ customer, t }) {
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      {/* Profile header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "20px 0 16px", borderBottom: `1px solid ${t.border}` }}>
+        <div style={{ width: 52, height: 52, borderRadius: "50%", background: t.blue, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <Ico d={I.person} size={26} sw={1.5} />
+        </div>
+        <div>
+          <div style={{ fontSize: 11, color: t.textMuted, marginBottom: 4 }}>Name
+            <span style={{ marginLeft: 8, background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 3, fontSize: 10, fontWeight: 600, padding: "1px 7px", color: t.textSub }}>Old</span>
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: t.text }}>{customer.name}</div>
+        </div>
+      </div>
+
+      <div style={{ height: 16 }} />
+      <TwoCol left={{ label: "Gender", value: customer.gender === "M" ? "Male" : "Female" }} right={{ label: "Age", value: customer.age }} t={t} />
+      <Divider t={t} />
+      <Row label="Marriage Status" value={customer.maritalStatus === "M" ? "Married" : customer.maritalStatus === "S" ? "Single" : customer.maritalStatus} t={t} />
+      <Row label="Address" value={customer.address} t={t} />
+      <Divider t={t} />
+
+      {/* Phones */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ fontSize: 14, fontWeight: 600, color: t.text }}>Customer</div>
+        <button style={{ background: t.blueLight, color: t.blue, border: `1px solid ${t.blue}`, borderRadius: 6, padding: "5px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Add Contacts</button>
+      </div>
+
+      {[
+        { label: "Phone. 1", number: customer.phone1, network: customer.phone1Network, isMain: true },
+        { label: "Phone. 2", number: customer.phone2, network: customer.phone2Network, isMain: false },
+      ].map((p, i) => (
+        <div key={i} style={{ marginBottom: 14 }}>
+          <div style={{ marginBottom: 6 }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: p.isMain ? t.red : t.text }}>{p.label}</span>
+            {p.network && <span style={{ fontSize: 11, color: t.blue, marginLeft: 8 }}>{p.network}</span>}
+          </div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ fontSize: 14, color: t.text, flex: 1 }}>{p.number}</div>
+            <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 10px", cursor: "pointer", color: t.textSub, display: "flex" }}><Ico d={I.edit} size={15} /></button>
+            <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 10px", cursor: "pointer", color: t.textSub, display: "flex" }}><Ico d={I.copy} size={15} /></button>
+            <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 12px", cursor: "pointer", color: t.textSub, fontSize: 12, fontWeight: 600 }}>SMS</button>
+            <a href={`tel:${p.number}`} style={{ background: t.green, border: "none", borderRadius: 7, padding: "8px 14px", cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
+              <PhoneIcon size={13} /> Call
+            </a>
+          </div>
+        </div>
+      ))}
+
+      <Divider t={t} />
+
+      {/* Emergency contacts */}
+      <div style={{ fontSize: 14, fontWeight: 600, color: t.text, marginBottom: 14 }}>Emergency Contact</div>
+      {customer.emergencyContacts.map((ec, i) => (
+        <div key={i} style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: t.textMuted, marginBottom: 4 }}>{ec.label}</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: t.text, marginBottom: 6 }}>{ec.name}</div>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div style={{ fontSize: 14, color: t.text, flex: 1 }}>{ec.phone}</div>
+            <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 10px", cursor: "pointer", color: t.textSub, display: "flex" }}><Ico d={I.copy} size={15} /></button>
+            <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 12px", cursor: "pointer", color: t.textSub, fontSize: 12, fontWeight: 600 }}>SMS</button>
+            <a href={`tel:${ec.phone}`} style={{ background: t.green, border: "none", borderRadius: 7, padding: "8px 14px", cursor: "pointer", color: "#fff", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, textDecoration: "none" }}>
+              <PhoneIcon size={13} /> Call
+            </a>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── LOAN INFO TAB ────────────────────────────────────────────────────────────
+function LoanInfoTab({ loan, t }) {
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ paddingTop: 20, marginBottom: 16 }}>
+        <span style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 5, fontSize: 12, fontWeight: 700, padding: "4px 10px", color: t.textSub, letterSpacing: "0.06em" }}>{loan.termType}</span>
+        <div style={{ fontSize: 20, fontWeight: 700, color: t.text, marginTop: 12, fontFamily: "'DM Serif Display',Georgia,serif" }}>{loan.product}</div>
+      </div>
+      <Divider t={t} />
+
+      <Row label="Loan ID"       value={loan.loanId}   t={t} />
+      <TwoCol left={{ label: "Loan Amount", value: `${loan.currency} ${loan.loanAmount.toLocaleString()}` }} right={{ label: "Loan Date", value: loan.loanDate }} t={t} />
+      <Divider t={t} />
+      <TwoCol left={{ label: "Loan Terms", value: loan.loanTerms }} right={{ label: "Due Date", value: loan.dueDate }} t={t} />
+      <Divider t={t} />
+      <TwoCol
+        left={{ label: "Overdue Days", value: loan.overdueDays, color: loan.overdueDays > 0 ? t.red : t.green }}
+        right={{ label: "Overdue Amount", value: `${loan.currency} ${loan.overdueAmount.toFixed(2)}`, color: loan.overdueAmount > 0 ? t.blue : t.green }}
+        t={t} />
+      <Divider t={t} />
+      <Row label="Amount after exemption" value={`${loan.currency} ${loan.amountAfterExemption.toFixed(2)}`} t={t} />
+      <Row label="Paid Amount" value={`${loan.currency} ${loan.paidAmount.toFixed(2)}`} t={t} />
+      <Divider t={t} />
+
+      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+        <button style={{ flex: 1, padding: "10px", background: "transparent", border: `1px solid ${t.blue}`, borderRadius: 8, color: t.blue, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Loan Receipt &gt;&gt;</button>
+        <button style={{ flex: 1, padding: "10px", background: "transparent", border: `1px solid ${t.border}`, borderRadius: 8, color: t.textSub, fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Download link</button>
+      </div>
+
+      {/* Terms section */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <div style={{ fontSize: 16, fontWeight: 700, color: t.text }}>Terms <span style={{ color: t.blue }}>{loan.loanTerms}</span></div>
+        {loan.overdueDays > 0 && <span style={{ background: t.redLight, color: t.red, fontSize: 12, fontWeight: 700, padding: "3px 10px", borderRadius: 5 }}>Overdue</span>}
+      </div>
+      <div style={{ background: t.surfaceAlt, borderRadius: 10, padding: "14px 16px" }}>
+        <TwoCol left={{ label: "Due Date", value: loan.dueDate }} right={{ label: "Overdue Days", value: loan.overdueDays, color: loan.overdueDays > 0 ? t.red : t.text }} t={t} />
+        <Row label="Rec Total Amount" value={`${loan.currency} ${loan.recTotalAmount.toFixed(2)}`} t={t} />
+      </div>
+    </div>
+  );
+}
+
+// ─── ACTION INFO TAB ──────────────────────────────────────────────────────────
+function ActionInfoTab({ actions, t }) {
+  if (!actions.length) return (
+    <div style={{ padding: "60px 20px", textAlign: "center", color: t.textMuted, fontSize: 14 }}>No actions recorded yet.</div>
+  );
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", paddingTop: 16, marginBottom: 12 }}>
+        <button style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 7, padding: "7px 12px", cursor: "pointer", color: t.textSub, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+          <Ico d={I.filter} size={13} /> Filter
+        </button>
+      </div>
+      {actions.map(a => (
+        <div key={a.no} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 12, padding: "16px", marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: t.textMuted }}>NO.{a.no}</span>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ fontSize: 11, color: t.textMuted }}>Action Time</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: t.blue }}>{a.time}</div>
+            </div>
+          </div>
+          <Divider t={t} />
+          <Row label="Contact Name"  value={a.contactName} t={t} />
+          <TwoCol left={{ label: "Contact Type", value: a.contactType }} right={{ label: "Collector", value: a.collector }} t={t} />
+          <Divider t={t} />
+          <TwoCol left={{ label: "Contact Phone", value: a.contactPhone }} right={{ label: "Action Code", value: `${a.actionCode}` }} t={t} />
+          <Row label="Result"       value={a.subCode}       t={t} valueColor={t.blue} />
+          <Row label="Action Description" value={a.description} t={t} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── DEDUCTION HISTORY TAB ────────────────────────────────────────────────────
+function DeductionHistoryTab({ deductions, currency, t }) {
+  const total = deductions.reduce((s, d) => s + d.amount, 0);
+  if (!deductions.length) return (
+    <div style={{ padding: "60px 20px", textAlign: "center", color: t.textMuted, fontSize: 14 }}>No payment history.</div>
+  );
+  return (
+    <div style={{ padding: "0 20px 24px" }}>
+      <div style={{ background: t.greenLight, border: `1px solid ${t.green}`, borderRadius: 10, padding: "14px 16px", margin: "16px 0 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ fontSize: 12, color: t.green, fontWeight: 600 }}>Total Paid</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: t.green, fontFamily: "'DM Serif Display',Georgia,serif" }}>{currency} {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+      </div>
+      {deductions.map((d, i) => (
+        <div key={i} style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 10, padding: "14px 16px", marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: t.green }}>{currency} {d.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</div>
+            <div style={{ fontSize: 12, color: t.textMuted }}>{d.date}</div>
+          </div>
+          <TwoCol left={{ label: "Transaction ID", value: d.txId }} right={{ label: "Channel", value: d.channel }} t={t} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── DETAIL SCREEN ────────────────────────────────────────────────────────────
+function DetailScreen({ caseData, t, onBack, onCaseUpdate }) {
+  const [activeTab, setActiveTab]         = useState("Customer Info");
+  const [overlay, setOverlay]             = useState(null); // "record"|"sms"|"recon"|"exempt"
+  const tabs = ["Customer Info", "Loan Info", "Action Info", "Deduction History"];
+
+  const addAction = (action) => {
+    const updated = { ...caseData, actions: [{ ...action, no: caseData.actions.length + 1, contactType: "SF", collector: "ENIOLA BALOGUN", contactPhone: "Phone 1" }, ...caseData.actions] };
+    onCaseUpdate(updated);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: t.bg }}>
+      {/* Header */}
+      <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: "14px 20px", display: "flex", alignItems: "center", gap: 14, position: "sticky", top: 0, zIndex: 10 }}>
+        <button onClick={onBack} style={{ background: "none", border: "none", cursor: "pointer", color: t.text, display: "flex" }}><Ico d={I.back} size={20} sw={2} /></button>
+        <span style={{ fontSize: 16, fontWeight: 700, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif" }}>Details</span>
+      </div>
+
+      {/* 2×2 Tab Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "16px 16px 0" }}>
+        {tabs.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            style={{ padding: "13px 10px", fontSize: 13, fontWeight: 600, borderRadius: 10, border: `1.5px solid ${activeTab === tab ? t.blue : t.border}`, background: activeTab === tab ? t.blue : t.surface, color: activeTab === tab ? "#fff" : t.textSub, cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s" }}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+        {activeTab === "Customer Info"      && <CustomerInfoTab    customer={caseData.customer}                              t={t} />}
+        {activeTab === "Loan Info"          && <LoanInfoTab         loan={caseData.loan}                                      t={t} />}
+        {activeTab === "Action Info"        && <ActionInfoTab       actions={caseData.actions}                                t={t} />}
+        {activeTab === "Deduction History"  && <DeductionHistoryTab deductions={caseData.deductions} currency={caseData.loan.currency} t={t} />}
+      </div>
+
+      {/* Bottom bar */}
+      <BottomBar t={t}
+        onRecord={() => setOverlay("record")}
+        onSms={() => setOverlay("sms")}
+        onReconciliation={() => setOverlay("recon")}
+        onExempt={() => setOverlay("exempt")} />
+
+      {/* Overlays */}
+      {overlay === "record" && <RecordModal t={t} onClose={() => setOverlay(null)} onSubmit={addAction} customerName={caseData.customer.name} />}
+      {overlay === "sms"    && <SmsModal    t={t} onClose={() => setOverlay(null)} customerName={caseData.customer.name} phone1={caseData.customer.phone1} phone2={caseData.customer.phone2} />}
+      {overlay === "recon"  && <ReconciliationModal t={t} onClose={() => setOverlay(null)} />}
+      {overlay === "exempt" && <ExemptModal t={t} onClose={() => setOverlay(null)} overdueAmount={caseData.loan.overdueAmount} currency={caseData.loan.currency} />}
+    </div>
+  );
+}
+
+// ─── CASES LIST ───────────────────────────────────────────────────────────────
+function CasesList({ cases, t, onCaseClick, dark, setDark }) {
+  const [tab, setTab]  = useState("All");
+  const [q, setQ]      = useState("");
   const clickCount = useRef(0);
   const clickTimer = useRef(null);
   const handleLogoClick = () => {
@@ -664,76 +704,118 @@ export default function App() {
     else clickTimer.current = setTimeout(() => { clickCount.current = 0; }, 600);
   };
 
+  const shown = cases.filter(c => {
+    const ms = c.customer.name.toLowerCase().includes(q.toLowerCase()) || c.product.toLowerCase().includes(q.toLowerCase());
+    const mt = tab === "All" || c.caseStatus.toLowerCase() === tab.toLowerCase();
+    return ms && mt;
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: t.bg }}>
+      {/* Header */}
+      <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: "16px 20px 12px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div onClick={handleLogoClick} style={{ fontSize: 22, fontWeight: 800, color: t.text, fontFamily: "'DM Serif Display',Georgia,serif", cursor: "default", userSelect: "none" }}>LendFlow</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ fontSize: 11, color: t.textMuted }}>Triple-click logo to toggle theme</div>
+          </div>
+        </div>
+        {/* Search */}
+        <div style={{ position: "relative" }}>
+          <div style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: t.textMuted }}><Ico d={I.search} size={16} /></div>
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search Case Information" style={{ ...inputSt(t), paddingLeft: 40, borderRadius: 24 }} />
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, overflowX: "auto", display: "flex", padding: "0 16px" }}>
+        {CASE_TABS.map(tb => (
+          <button key={tb} onClick={() => setTab(tb)} style={{ padding: "12px 16px", fontSize: 13, fontWeight: tab === tb ? 700 : 400, color: tab === tb ? t.blue : t.textMuted, background: "transparent", border: "none", cursor: "pointer", borderBottom: `2.5px solid ${tab === tb ? t.blue : "transparent"}`, whiteSpace: "nowrap", fontFamily: "inherit", transition: "all 0.15s" }}>{tb}</button>
+        ))}
+      </div>
+
+      {/* Count + filter */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: t.blue }}>{shown.length} case{shown.length !== 1 ? "s" : ""}</span>
+        <button style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 7, padding: "6px 12px", cursor: "pointer", color: t.textSub, display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}>
+          <Ico d={I.filter} size={13} /> Filter
+        </button>
+      </div>
+
+      {/* Case cards */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 24px" }}>
+        {shown.map((c, idx) => (
+          <div key={c.id} onClick={() => onCaseClick(c)}
+            style={{ background: t.surface, border: `1px solid ${t.border}`, borderRadius: 12, marginBottom: 12, overflow: "hidden", cursor: "pointer", transition: "border-color 0.15s" }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = t.blue}
+            onMouseLeave={e => e.currentTarget.style.borderColor = t.border}>
+            {/* Top row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px 8px", borderBottom: `1px solid ${t.border}` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: t.blue }}>{idx + 1}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: t.textSub, background: t.surfaceAlt, padding: "3px 10px", borderRadius: 6 }}>{c.product}</span>
+                <CasePill status={c.caseStatus} t={t} />
+              </div>
+              <span style={{ fontSize: 12, color: t.textMuted }}>Call {c.callCount} times</span>
+            </div>
+
+            {/* Bottom row */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+                <span style={{ background: t.surfaceAlt, border: `1px solid ${t.border}`, borderRadius: 4, fontSize: 10, fontWeight: 700, padding: "2px 7px", color: t.textMuted, flexShrink: 0 }}>{c.borrowerType}</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: t.text, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.customer.name}</div>
+                  <div style={{ fontSize: 12, marginTop: 3 }}>
+                    <span style={{ color: t.textMuted }}>Amount: </span>
+                    <span style={{ fontWeight: 700, color: t.text }}>{c.overdueAmount.toFixed(2)}</span>
+                    <span style={{ color: t.textMuted, marginLeft: 14 }}>Overdue Days: </span>
+                    <span style={{ fontWeight: 700, color: c.overdueDays > 0 ? t.red : t.green }}>{c.overdueDays}</span>
+                  </div>
+                </div>
+              </div>
+              {/* Call button */}
+              <a href={`tel:${c.customer.phone1}`} onClick={e => e.stopPropagation()}
+                style={{ width: 46, height: 46, borderRadius: "50%", background: t.green, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: 12, textDecoration: "none" }}>
+                <PhoneIcon size={20} />
+              </a>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── ROOT ─────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [dark, setDark]           = useState(false);
+  const [cases, setCases]         = useState(mockCases);
+  const [selectedCase, setSelected] = useState(null);
   const t = dark ? themes.dark : themes.light;
 
-  const nav = [
-    { key: "dashboard",   label: "Dashboard",   icon: I.dash    },
-    { key: "collections", label: "Collections", icon: I.collect },
-    { key: "customers",   label: "Customers",   icon: I.cust    },
-    { key: "loans",       label: "Loans",       icon: I.loan    },
-  ];
+  const handleCaseUpdate = (updated) => {
+    setCases(prev => prev.map(c => c.id === updated.id ? updated : c));
+    setSelected(updated);
+  };
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
-        ::selection { background: ${t.accent}22; }
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        body { font-family: 'DM Sans', sans-serif; background: ${t.bg}; overflow-x: hidden; }
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
         ::-webkit-scrollbar-thumb { background: ${t.border}; border-radius: 2px; }
         select option { background: ${t.surface}; color: ${t.text}; }
-        input::placeholder { color: ${t.textMuted}; }
-        @keyframes su     { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+        input::placeholder, textarea::placeholder { color: ${t.textMuted}; }
+        textarea { font-family: inherit; }
       `}</style>
 
-      <div style={{ display: "flex", minHeight: "100vh", background: t.bg, color: t.text, transition: "background 0.25s, color 0.25s", position: "relative" }}>
-
-        {/* Desktop sidebar */}
-        {!isMobile && (
-          <aside style={{ width: 210, minHeight: "100vh", background: t.surface, borderRight: `1px solid ${t.border}`, display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", flexShrink: 0, transition: "background 0.25s, border-color 0.25s" }}>
-            <SidebarContent t={t} page={page} setPage={setPage} nav={nav} handleLogoClick={handleLogoClick} />
-          </aside>
-        )}
-
-        {/* Mobile backdrop */}
-        {isMobile && menuOpen && (
-          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 200, animation: "fadeIn 0.2s ease" }} />
-        )}
-
-        {/* Mobile sidebar */}
-        {isMobile && (
-          <aside style={{ position: "fixed", top: 0, left: 0, height: "100vh", width: 240, background: t.surface, borderRight: `1px solid ${t.border}`, display: "flex", flexDirection: "column", zIndex: 300, transform: menuOpen ? "translateX(0)" : "translateX(-100%)", transition: "transform 0.28s cubic-bezier(0.4,0,0.2,1)", boxShadow: menuOpen ? "4px 0 24px rgba(0,0,0,0.18)" : "none" }}>
-            <SidebarContent t={t} page={page} setPage={setPage} nav={nav} handleLogoClick={handleLogoClick} onNavClick={() => setMenuOpen(false)} />
-          </aside>
-        )}
-
-        {/* Main */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
-          <header style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: isMobile ? "13px 16px" : "13px 32px", display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100, transition: "background 0.25s, border-color 0.25s" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              {isMobile && (
-                <button onClick={() => setMenuOpen(o => !o)} style={{ background: "none", border: "none", cursor: "pointer", color: t.textSub, display: "flex", alignItems: "center", padding: 4 }}>
-                  <HamburgerIcon open={menuOpen} />
-                </button>
-              )}
-              <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.textMuted }}>
-                {nav.find(n => n.key === page)?.label}
-              </span>
-            </div>
-            <span style={{ fontSize: 11, color: t.textMuted }}>
-              {new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}
-            </span>
-          </header>
-
-          <main style={{ flex: 1, padding: isMobile ? "20px 14px" : "32px 40px", overflowY: "auto" }}>
-            {page === "dashboard"   && <Dashboard   loans={loans} customers={customers} t={t} isMobile={isMobile} />}
-            {page === "collections" && <Collections loans={loans} setLoans={setLoans} customers={customers} t={t} isMobile={isMobile} />}
-            {page === "customers"   && <Customers   customers={customers} setCustomers={setCustomers} loans={loans} t={t} />}
-            {page === "loans"       && <Loans       loans={loans} setLoans={setLoans} customers={customers} t={t} />}
-          </main>
-        </div>
+      <div style={{ maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: t.bg, position: "relative", boxShadow: "0 0 40px rgba(0,0,0,0.15)" }}>
+        {selectedCase
+          ? <DetailScreen caseData={selectedCase} t={t} onBack={() => setSelected(null)} onCaseUpdate={handleCaseUpdate} />
+          : <CasesList cases={cases} t={t} onCaseClick={setSelected} dark={dark} setDark={setDark} />
+        }
       </div>
     </>
   );
